@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+
+
 /// <summary>
 /// 渲染管线中的阴影配置
 /// </summary>
@@ -22,12 +24,21 @@ public class ShadowSettings
     {
         PCF2x2, PCF3x3, PCF5x5, PCF7x7
     }
-   
-   
-    /// <summary>
+
+	/// <summary>
+	/// 非定向光的阴影配置
+	/// </summary>
+	[System.Serializable]
+	public struct Other
+	{
+		public TextureSize atlasSize;
+		public FilterMode filter;
+	}
+	
+	/// <summary>
 	/// 定向光源的阴影配置
 	/// </summary>
-    [System.Serializable]
+	[System.Serializable]
 	public struct Directional
 	{
 		public TextureSize atlasSize;
@@ -64,6 +75,12 @@ public class ShadowSettings
 		cascadeFade = 0.1f,
         cascadeBlend = Directional.CascadeBlendMode.Hard
     };
+	//设置阴影配置的默认值
+	public Other other = new Other
+	{
+		atlasSize = TextureSize._1024,
+		filter = FilterMode.PCF2x2
+	};
 
 	
 }

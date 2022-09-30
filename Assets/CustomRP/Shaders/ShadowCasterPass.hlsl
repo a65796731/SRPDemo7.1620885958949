@@ -14,7 +14,8 @@ struct Varyings {
 	float2 baseUV : VAR_BASE_UV;
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
-
+//阴影平坠
+bool _ShadowPancaking;
 
 //顶点函数
 Varyings ShadowCasterPassVertex(Attributes input){
@@ -25,14 +26,16 @@ Varyings ShadowCasterPassVertex(Attributes input){
 	float3 positionWS = TransformObjectToWorld(input.positionOS);
 	output.positionCS = TransformWorldToHClip(positionWS);
 
-	#if UNITY_REVERSED_Z
+    if (_ShadowPancaking)
+    {
+#if UNITY_REVERSED_Z
 		output.positionCS.z =
 			min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#else
-		output.positionCS.z =
+#else
+        output.positionCS.z =
 			max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#endif
-	
+#endif
+    }
 	//计算缩放和偏移后的UV坐标
 	output.baseUV = TransformBaseUV(input.baseUV);
 	return output;
