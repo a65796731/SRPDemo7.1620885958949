@@ -47,6 +47,8 @@ OtherShadowData GetOtherShadowData(int lightIndex)
    data.strngth=_OtherLightShadowData[lightIndex].x;
    data.tileIndex = _OtherLightShadowData[lightIndex].y;
    data.shadowMaskChannel=_OtherLightShadowData[lightIndex].w;
+   data.isPoint = _OtherLightShadowData[lightIndex].z==1.0;
+    data.lightDirectionWS = 0.0;
    return data;
 }
 
@@ -84,6 +86,7 @@ Light GetOtherLight(int index, Surface surfaceWS, ShadowData shadowData)
 
     otherShadowData.lightPositionWS = position;
     otherShadowData.spotDirectionWS = spotDirection;
+    otherShadowData.lightDirectionWS = light.direction;
     return light;
 
 }

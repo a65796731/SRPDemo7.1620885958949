@@ -8,16 +8,16 @@ using UnityEngine.Rendering;
 /// </summary>
 public partial class CustomRenderPipeline : RenderPipeline
 {
-  
+   
     CameraRenderer renderer = new CameraRenderer();
     bool useDynamicBatching, useGPUInstancing,useLightPerObject;
     //阴影的配置
     ShadowSettings shadowSettings;
-
-    public CustomRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher,bool useLightPerObject, ShadowSettings shadowSettings)
+    PostFXSetting postFXSetting;
+    public CustomRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher,bool useLightPerObject, ShadowSettings shadowSettings,PostFXSetting postFXSetting)
     {
         this.shadowSettings = shadowSettings;
-
+        this.postFXSetting = postFXSetting;
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
         this.useLightPerObject = useLightPerObject;
@@ -35,7 +35,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         //遍历所有相机单独渲染
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, useLightPerObject,shadowSettings);
+            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, useLightPerObject,shadowSettings,postFXSetting);
         }
     }
 }

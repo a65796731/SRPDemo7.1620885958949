@@ -24,11 +24,13 @@ public partial class CameraRenderer
     static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
     //光照实例
     Lighting lighting = new Lighting();
+
+    PostFXStack postFXStack;
     /// <summary>
     /// 相机渲染
     /// </summary>
     public void Render(ScriptableRenderContext context, Camera camera,
-        bool useDynamicBatching, bool useGPUInstancing,bool useLightsPerObject,ShadowSettings shadowSettings)
+        bool useDynamicBatching, bool useGPUInstancing,bool useLightsPerObject,ShadowSettings shadowSettings, PostFXSetting postFXSetting)
     {
         this.context = context;
         this.camera = camera;
@@ -45,6 +47,7 @@ public partial class CameraRenderer
         ExecuteBuffer();
 
         lighting.Setup(context, cullingResults, shadowSettings, useLightsPerObject);
+        postFXStack.Setup(context,camera,postFXSetting);
         buffer.EndSample(SampleName);
         Setup();
 
