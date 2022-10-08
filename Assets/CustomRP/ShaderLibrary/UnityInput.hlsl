@@ -30,8 +30,11 @@ float4x4 unity_ProbeVolumeWorldToObject;
 float4 unity_ProbeVolumeSizeInv;
 float4 unity_ProbeVolumeMin;
 
+
 real4 unity_LightData;
 real4 unity_LightIndices[2];
+
+float4 _ProjectionParams;
 CBUFFER_END
 
 float4x4 unity_MatrixVP;

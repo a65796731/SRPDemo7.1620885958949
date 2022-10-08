@@ -22,10 +22,14 @@ public partial class CameraRenderer
     CullingResults cullingResults;
     static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
     static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
+
+    static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
     //光照实例
     Lighting lighting = new Lighting();
-
-    PostFXStack postFXStack;
+    /// <summary>
+    /// 后处理堆栈
+    /// </summary>
+    PostFXStack postFXStack=new PostFXStack();
     /// <summary>
     /// 相机渲染
     /// </summary>
@@ -56,10 +60,16 @@ public partial class CameraRenderer
         //绘制SRP不支持的内置shader类型
         DrawUnsupportedShaders();
 
-        //绘制Gizmos
-        DrawGizmos();
+        //绘制Gizmos,后处理之前
+        DrawGizmosBeforeFX();
+        if(postFXStack.IsActive)
+        {
+           postFXStack.Render(frameBufferId);
+        }
+        //绘制Gizmos,后处理之后
+        DrawGizmosAfterFX();
         // 释放申请的RT内存空间
-        lighting.Cleanup();
+        Cleanup();
 
         //提交命令缓冲区
         Submit();
@@ -120,6 +130,17 @@ public partial class CameraRenderer
         context.SetupCameraProperties(camera);
         //得到相机的clear flags
         CameraClearFlags flags = camera.clearFlags;
+        if(postFXStack.IsActive)
+        {
+            if (flags > CameraClearFlags.Color)
+                flags = CameraClearFlags.Color;
+
+            buffer.GetTemporaryRT(frameBufferId, camera.pixelWidth, camera.pixelHeight,
+                32, FilterMode.Bilinear, RenderTextureFormat.Default);
+
+            buffer.SetRenderTarget(frameBufferId, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+        }
+
         //设置相机清除状态
         buffer.ClearRenderTarget(flags <= CameraClearFlags.Depth, flags == CameraClearFlags.Color, 
             flags == CameraClearFlags.Color ? camera.backgroundColor.linear : Color.clear);
@@ -151,5 +172,13 @@ public partial class CameraRenderer
             return true;
         }
         return false;
+    }
+    void Cleanup()
+    {
+        lighting.Cleanup();
+        if(postFXStack.IsActive)
+        {
+            buffer.ReleaseTemporaryRT(frameBufferId);
+        }
     }
 }
