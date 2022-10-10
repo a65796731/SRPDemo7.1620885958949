@@ -6,6 +6,8 @@ enum Pass
 {
     BloomHorizontal,
     BloomVertical,
+    BloomCombine,
+    BloomPrefilter,
     Copy
 }
 
@@ -20,7 +22,10 @@ public partial class PostFXStack
         name = bufferName
     };
     int fxSourceId = Shader.PropertyToID("_PostFXSource");
-
+    int fxSource2Id = Shader.PropertyToID("_PostFXSource2");
+    int bloomPreFilterId = Shader.PropertyToID("_BloomPrefilter");
+    int bloomBucibicUpsamplingId = Shader.PropertyToID("_BloomBicubicUpsampling");
+    int bloomThresholdId = Shader.PropertyToID("_BloomThreshold");
     ScriptableRenderContext context;
     Camera camera;
     PostFXSetting settings;
@@ -60,11 +65,34 @@ public partial class PostFXStack
     void DoBloom(int sourceId)
     {
         buffer.BeginSample("Bloom");
+       
         PostFXSetting.BloomSettings bloomSettings = settings.Bloom;
+      
         int width = camera.pixelWidth / 2;
         int height = camera.pixelHeight / 2;
+      
+
+        if (bloomSettings.maxIterations==0
+           ||width<bloomSettings.downscaleLimit*2||height<bloomSettings.downscaleLimit*2)
+        {
+            Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Copy);
+            buffer.EndSample("Bloom");
+            return;
+        }
+        Vector4 threshold;
+        threshold.x = Mathf.GammaToLinearSpace(bloomSettings.threshold);
+        threshold.y = threshold.x * bloomSettings.thresholdKnee;
+        threshold.z = 2.0f * threshold.y;
+        threshold.w = 0.25f / (threshold.y + 0.00001f);
+        threshold.y -= threshold.x;
+        buffer.SetGlobalVector(bloomThresholdId, threshold);
         RenderTextureFormat format = RenderTextureFormat.Default;
-        int formId = sourceId;
+        buffer.GetTemporaryRT(bloomPreFilterId, width, height, 0, FilterMode.Bilinear, format);
+        Draw(sourceId, bloomPreFilterId, Pass.BloomPrefilter);
+
+        width /= 2;
+        height /=  2;
+        int formId = bloomPreFilterId;
         int toId = bloomPyrmidId+1;
         int i;
         for (i = 0; i < bloomSettings.maxIterations; i++)
@@ -83,13 +111,30 @@ public partial class PostFXStack
             width /= 2;
             height /= 2;
         }
-        Draw(formId, BuiltinRenderTextureType.CameraTarget, Pass.BloomHorizontal);
-        for (i -= 1; i >= 0; i--)
+        buffer.ReleaseTemporaryRT(bloomPreFilterId);
+        buffer.SetGlobalFloat(bloomBucibicUpsamplingId, settings.bicubicUpsampling ? 1f : 0f);
+        if (i > 1)
         {
-            buffer.ReleaseTemporaryRT(formId );
-            buffer.ReleaseTemporaryRT(formId -1);
-            formId -= 2;
+            buffer.ReleaseTemporaryRT(formId - 1);
+            toId -= 5;
+            for (i -= 1; i >= 0; i--)
+            {
+                buffer.SetGlobalTexture(fxSource2Id, toId + 1);
+                Draw(formId, toId, Pass.BloomCombine);
+
+                buffer.ReleaseTemporaryRT(formId);
+                buffer.ReleaseTemporaryRT(toId + 1);
+                formId = toId;
+                toId -= 2;
+            }
+            buffer.SetGlobalTexture(fxSource2Id, sourceId);
+            Draw(formId, BuiltinRenderTextureType.CameraTarget, Pass.BloomCombine);
         }
+        else
+        {
+            buffer.ReleaseTemporaryRT(bloomPyrmidId);
+        }
+      
         buffer.EndSample("Bloom");
     }
 }

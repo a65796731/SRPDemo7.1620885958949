@@ -10,6 +10,8 @@ public class PostFXSetting : ScriptableObject
     Shader shader = default;
     [System.NonSerialized]
     Material material;
+   
+    public bool bicubicUpsampling;
 
     public Material Material
     {
@@ -32,6 +34,12 @@ public class PostFXSetting : ScriptableObject
 
         [Min(1f)]
         public int downscaleLimit;
+
+        [Min(0)]
+        public float threshold;
+
+        [Range(0f, 1f)]
+        public float thresholdKnee;
 
     }
     [SerializeField]

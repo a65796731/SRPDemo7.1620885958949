@@ -40,6 +40,14 @@
         
         }
         Pass{
+        Name "Bloom Combine"
+         HLSLPROGRAM
+         #pragma target 3.5
+         #pragma vertex DefaultPassVertex
+         #pragma fragment BloomComBinePassFragment
+         ENDHLSL
+        }
+        Pass{
           Name "Copy"
           HLSLPROGRAM
            #pragma target 3.5

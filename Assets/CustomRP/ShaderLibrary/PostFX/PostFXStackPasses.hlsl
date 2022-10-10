@@ -1,8 +1,12 @@
 #ifndef CUSTOM_POST_FX_PASSES_INCLUDED
 #define CUSTOM_POST_FX_PASSES_INCLUDED
 
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Filtering.hlsl"
+bool _BloomBicubicUpsampling;
 float4 _PostFXSource_TexelSize;
+float4 _BloomThreshold;
 TEXTURE2D(_PostFXSource);
+TEXTURE2D(_PostFXSource2);
 SAMPLER(sampler_linear_clamp);
 struct Varyins
 {
@@ -31,6 +35,43 @@ float4 GetSource(float2 screenUV)
 {
     return SAMPLE_TEXTURE2D_LOD(_PostFXSource, sampler_linear_clamp, screenUV,0);
 
+}
+float4 GetSource2(float2 screenUV)
+{
+    return SAMPLE_TEXTURE2D_LOD(_PostFXSource2, sampler_linear_clamp, screenUV, 0);
+
+}
+float4 GetSoruceBicubic(float2 scrennUV)
+{
+    return SampleTexture2DBicubic(TEXTURE2D_ARGS(_PostFXSource, sampler_linear_clamp), scrennUV,
+    _PostFXSource_TexelSize.zwxy, 1.0, 0.0);
+}
+float3 ApplyBloomThreshold(float3 color)
+{
+    float brightness = Max3(color.r, color.g,color.b);
+    float soft = brightness * _BloomThreshold.y;
+    soft = clamp(soft, 0.0, _BloomThreshold.z);
+    soft = soft * soft * _BloomThreshold.w;
+    float contribution = max(soft, brightness - _BloomThreshold.x);
+    contribution /= max(brightness, 0.00001);
+    return color * contribution;
+
+}
+float4 BloomComBinePassFragment(Varyins input):SV_Target
+{
+    float3 lowRes;
+    if (_BloomBicubicUpsampling)
+    {
+    
+        lowRes = GetSoruceBicubic(input.screenUV).rgb;
+    }
+    else
+    {
+        lowRes = GetSource(input.screenUV).rgb;
+    }
+    float3 highRes = GetSource2(input.screenUV).rgb;
+    
+    return float4(lowRes + highRes, 1.0);
 }
 float4 CopyPassFragment(Varyins input) : SV_Target
 {
