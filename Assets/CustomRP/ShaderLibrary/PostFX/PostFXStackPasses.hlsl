@@ -3,6 +3,7 @@
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Filtering.hlsl"
 bool _BloomBicubicUpsampling;
+float _BloomIntensity;
 float4 _PostFXSource_TexelSize;
 float4 _BloomThreshold;
 TEXTURE2D(_PostFXSource);
@@ -57,6 +58,11 @@ float3 ApplyBloomThreshold(float3 color)
     return color * contribution;
 
 }
+float4 BloomPrefilterPassFragment(Varyins input) : SV_TARGET
+{
+    float3 color = ApplyBloomThreshold(GetSource(input.screenUV).rgb);
+    return float4(color, 1);
+}
 float4 BloomComBinePassFragment(Varyins input):SV_Target
 {
     float3 lowRes;
@@ -71,7 +77,7 @@ float4 BloomComBinePassFragment(Varyins input):SV_Target
     }
     float3 highRes = GetSource2(input.screenUV).rgb;
     
-    return float4(lowRes + highRes, 1.0);
+    return float4(lowRes * _BloomIntensity + highRes, 1.0);
 }
 float4 CopyPassFragment(Varyins input) : SV_Target
 {

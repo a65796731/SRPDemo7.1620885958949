@@ -41,6 +41,9 @@ public class PostFXSetting : ScriptableObject
         [Range(0f, 1f)]
         public float thresholdKnee;
 
+        [Min(0f)]
+        public float intensity;
+
     }
     [SerializeField]
     BloomSettings bloom = default;
